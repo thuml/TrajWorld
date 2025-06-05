@@ -436,159 +436,6 @@ class TrajWorldDynamics(object):
         if knn_data is not None:
             self.kd_tree = KDTree(knn_data)
 
-    def validate_pt(self, one_val_loader):
-        info_sum = None
-        mse =0.0
-        loss = 0.0
-        naive_mse = 0.0
-        abs = 0.0
-        naive_abs = 0.0
-        abs_obs = 0.0
-        naive_abs_obs = 0.0
-        all_size = 5 # only for pendulum
-        one_val_loader = one_val_loader["pendulum"] if "pendulum" in one_val_loader else one_val_loader["two_pole"]
-        for i, val_batch in enumerate(one_val_loader):
-            history, obs_act_indicator, history_mask, variate_masks, obs_select, support, sigma  = self.preprocess_batch(
-                val_batch)
-            self.rng, info = eval_trm_for_pretrain(
-                self.rng, self.trm,
-                history, obs_act_indicator, history_mask, variate_masks, obs_select, support, sigma,
-                input_discrete=self.config.trm_input_discrete,
-                target_discrete=self.config.trm_target_discre
-            )
-            mse += info["mse"]
-            loss += info["loss"]
-            # naive_mse += info["naive_mse"]
-            # abs += info["abs"]
-            # naive_abs += info["naive_abs"]
-            # abs_obs += info["abs_obs"]
-            # naive_abs_obs += info["naive_abs_obs"]
-
-            if i > all_size:
-                break
-        mse /= all_size
-        loss /= all_size
-        # naive_mse /= all_size
-        # abs /= all_size
-        # naive_abs /= all_size
-        # abs_obs /= all_size
-        # naive_abs_obs /= all_size
-        episode1 = np.load("/workspace/yinshaofeng/JAX-CORL/anylearn_two_pole/episode_0000026.npz")
-        episode2 = np.load("/workspace/yinshaofeng/JAX-CORL/anylearn_two_pole/episode_0000027.npz")
-        episode3 = np.load("/workspace/yinshaofeng/JAX-CORL/anylearn_two_pole/episode_0000026.npz")
-        episode4 = np.load("/workspace/yinshaofeng/JAX-CORL/anylearn_two_pole/episode_0000027.npz")
-        episode5 = np.load("/workspace/yinshaofeng/JAX-CORL/anylearn_two_pole/episode_0000026.npz")
-        episode6 = np.load("/workspace/yinshaofeng/JAX-CORL/anylearn_two_pole/episode_0000027.npz")
-        obs1 = episode1["observation"][:-1]
-        obs2 = episode2["observation"][:-1]
-        obs3 = obs1 # [:, ::-1]
-        obs4 = obs2 # [:, ::-1]
-        idx = np.arange(obs3.shape[1])
-        while idx[0] == 0:
-            np.random.shuffle(idx)
-        inverse_idx = np.argsort(idx)
-        obs5 = obs1 # [:, idx]
-        obs6 = obs2 # [:, idx]
-        act1 = episode1["action"][1:]
-        act2 = episode2["action"][1:]
-        act3 = episode3["action"][1:]
-        act4 = episode4["action"][1:]
-        act5 = episode5["action"][1:]
-        act6 = episode6["action"][1:]
-        r1 = episode1["reward"][1:]
-        r2 = episode2["reward"][1:]
-        r3 = episode3["reward"][1:]
-        r4 = episode4["reward"][1:]
-        r5 = episode5["reward"][1:]
-        r6 = episode6["reward"][1:]
-        hist1 = np.concatenate([obs1, r1, act1], axis=-1)
-        hist2 = np.concatenate([obs2, r2, act2], axis=-1)
-        hist3 = np.concatenate([obs3, r3, act3], axis=-1)
-        hist4 = np.concatenate([obs4, r4, act4], axis=-1)
-        hist5 = np.concatenate([obs5, r5, act5], axis=-1)
-        hist6 = np.concatenate([obs6, r6, act6], axis=-1)
-
-        hist1 = np.expand_dims(hist1, axis=0)
-        hist2 = np.expand_dims(hist2, axis=0)
-        hist3 = np.expand_dims(hist3, axis=0)
-        hist4 = np.expand_dims(hist4, axis=0)
-        hist5 = np.expand_dims(hist5, axis=0)
-        hist6 = np.expand_dims(hist6, axis=0)
-
-        # all_hist = np.concatenate([hist1, hist2, hist3], axis=0)
-        all_hist = np.concatenate([hist1, hist2, hist3, hist4, hist5, hist6], axis=0)
-        max_min = np.load("/workspace/yinshaofeng/JAX-CORL/anylearn_two_pole/max_min_values.npz")
-        max_values = max_min["max"]
-        min_values = max_min["min"]
-
-
-
-        for i, val_batch in enumerate(one_val_loader):
-
-            if i > 0:
-                break
-
-            history, obs_act_indicator, history_mask, variate_masks, obs_select, support, sigma  = self.preprocess_batch(
-                val_batch)
-            val_batch["history"] = (all_hist - min_values) / (max_values - min_values)
-            val_batch["history_mask"]  = np.ones((all_hist.shape[0], all_hist.shape[1]))
-            val_batch["obs_act_indicator"] = val_batch["obs_act_indicator"][:6]
-
-            # perform transform
-            obss = val_batch["history"][2:4, :, :8][:, :, ::-1]
-            others = val_batch["history"][2:4, :, 8:]
-            hist = np.concatenate([obss, others], axis=-1)
-            val_batch["history"][2:4] = hist
-            obss = val_batch["history"][4:6, :, :8][:, :, idx]
-            others = val_batch["history"][4:6, :, 8:]
-            hist = np.concatenate([obss, others], axis=-1)
-            val_batch["history"][4:6] = hist
-
-            history, obs_act_indicator, history_mask, variate_masks, obs_select, support, sigma  = self.preprocess_batch(
-                val_batch)
-            real_history = history.copy()
-            history_len = 10
-            rollout_len = 10
-            history = history[:, :history_len]
-            history_mask = history_mask[:, :history_len]
-            for j in range(rollout_len):
-                self.rng, pred = step_trm_for_pretrain(
-                    self.rng, self.trm,
-                    history, obs_act_indicator, history_mask, variate_masks, obs_select, support, sigma,
-                    input_discrete=self.config.trm_input_discrete,
-                    target_discrete=self.config.trm_target_discret
-                )
-                # set action
-                pred = pred.at[:,0,9].set(real_history[:, history_len + j, 9])
-                history = jnp.concatenate([history, pred], axis=1)
-                history_mask = jnp.concatenate([history_mask, jnp.ones((history_mask.shape[0], 1))], axis=1)
-
-            history = history[:, :, :len(max_values)]
-            real_history = real_history[:, :, :len(max_values)]
-            obss = history[2:4, :, :8][:, :, ::-1]
-            others = history[2:4, :, 8:]
-            hist = jnp.concatenate([obss, others], axis=-1)
-            history = history.at[2:4].set(hist)
-            obss = history[4:6, :, :8][:, :, inverse_idx]
-            others = history[4:6, :, 8:]
-            hist = jnp.concatenate([obss, others], axis=-1)
-            history = history.at[4:6].set(hist)
-
-            obss = real_history[2:4, :, :8][:, :, ::-1]
-            others = real_history[2:4, :, 8:]
-            hist = jnp.concatenate([obss, others], axis=-1)
-            real_history = real_history.at[2:4].set(hist)
-
-            obss = real_history[4:6, :, :8][:, :, inverse_idx]
-            others = real_history[4:6, :, 8:]
-            hist = jnp.concatenate([obss, others], axis=-1)
-            real_history = real_history.at[4:6].set(hist)
-            history = history * (max_values - min_values + 1e-8) + min_values
-            real_history = real_history * (max_values - min_values + 1e-8) + min_values
-
-        return mse, loss, naive_mse, abs, naive_abs, abs_obs, naive_abs_obs, history, real_history
-
-
     def get_params(self):
         return self.trm.params
 
@@ -949,64 +796,6 @@ class TrajWorldDynamics(object):
             bar.set_postfix(loss=info["loss"])
             if updated_iters >= max_iters:
                 break
-            
-    def train_with_dataloader_unit_test(
-        self,
-        train_loader,
-        val_loader,
-        logger: Logger
-    ) -> None:
-        def preprocess_batch_old(batch):
-            obs_act_indicator = batch['obs_act_indicator']
-            act_dim = obs_act_indicator[0, 0].sum().item()
-            obs_dim = obs_act_indicator.shape[-1] - act_dim - 1
-            max_values = jnp.ones(obs_dim + 1 + act_dim)
-            min_values = jnp.zeros(obs_dim + 1 + act_dim)
-            support = jnp.linspace(min_values, max_values, self.config.uniform_bin +
-                                   1, dtype=jnp.float32).transpose()
-            sigma = (max_values - min_values) / self.config.uniform_bin * 0.75  # TODO: magic number
-            return obs_dim, support, sigma
-        
-        def preprocess_batch(batch):
-            history, obs_act_indicator, history_mask = batch['history'], batch['obs_act_indicator'], batch['history_mask']
-            act_dim = obs_act_indicator[0, 0].sum().item()
-            obs_dim = obs_act_indicator.shape[-1] - act_dim - 1
-            
-            max_num_variates = 91  # TODO: magic number
-            # max_num_variates = ((history.shape[-1] - 1) // 31 + 1) * 31
-            max_values = jnp.ones(max_num_variates)
-            min_values = jnp.zeros(max_num_variates)
-            support = jnp.linspace(min_values, max_values, self.config.uniform_bin +
-                                    1, dtype=jnp.float32).transpose()
-            sigma = (max_values - min_values) / self.config.uniform_bin * 0.75  # TODO: magic number
-
-            padding_variate_dim = max_num_variates - obs_dim - 1 - act_dim
-            history = jnp.concatenate([history, jnp.zeros(history.shape[:-1] + (padding_variate_dim,))], axis=-1)
-            obs_select = jnp.concat([1.0 - obs_act_indicator, jnp.zeros(obs_act_indicator.shape[:-1] + (padding_variate_dim,), dtype=jnp.int8)], axis=-1)
-            obs_act_indicator = jnp.concat([obs_act_indicator, jnp.zeros(obs_act_indicator.shape[:-1] + (padding_variate_dim,), dtype=jnp.int8)], axis=-1)
-            variate_masks = jnp.concatenate([jnp.ones((history.shape[0], obs_dim + 1 + act_dim)),
-                                             jnp.zeros((history.shape[0], padding_variate_dim))], axis=-1)
-            return history, obs_act_indicator, history_mask, variate_masks, obs_select, support, sigma
-   
-        for i, val_batch in enumerate(val_loader):
-            self.rng, info_old = eval_trm(
-                self.rng, self.trm,
-                val_batch['history'], val_batch['obs_act_indicator'], val_batch['history_mask'],       
-                *preprocess_batch_old(val_batch),
-                False,
-                input_discrete=self.config.trm_input_discrete,
-                target_discrete=self.config.trm_target_discrete,
-            )
-            self.rng, info = eval_trm_for_pretrain(
-                self.rng, self.trm,
-                *preprocess_batch(val_batch),
-                input_discrete=self.config.trm_input_discrete,
-                target_discrete=self.config.trm_target_discrete,
-            )
-            print(info_old)
-            print(info)
-        return
-
 
     def load_save(self):
         self.trm = self.trm.replace(params=self.saved_params)
@@ -1024,12 +813,9 @@ class TrajWorldDynamics(object):
         act_dim = obs_act_indicator[0, 0].sum().item()
         obs_dim = obs_act_indicator.shape[-1] - act_dim - 1
 
-        # max_num_variates = 91  # TODO: magic number
         max_num_variates = ((history.shape[-1] - 1) // 31 + 1) * 31
-        # max_num_variates = history.shape[-1]
         max_values = jnp.ones(max_num_variates)
         min_values = jnp.zeros(max_num_variates)
-        # min_values = -jnp.ones(max_num_variates)
         support = jnp.linspace(min_values, max_values, self.config.uniform_bin +
                                1, dtype=jnp.float32).transpose()
         sigma = (max_values - min_values) / self.config.uniform_bin * 0.75  # TODO: magic number
