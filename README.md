@@ -77,7 +77,7 @@ Baseline examples are included in the script.
 ## 🚀 Release Progress
 
 - [ ] UniTraj Dataset
-- [ ] Pre-trained TrajWorld Model
+- [x] Pre-trained TrajWorld Model
 - [x] Transition prediction evaluation
 - [x] OPE evaluation
 - [x] MPC evaluation
