@@ -36,7 +36,7 @@ See more baseline scripts in [`scripts/pretrain`](scripts/pretrain).
 To fine-tune TrajWorld:
 
 ```bash
-python scripts/training/train_trajworld.py env_name=hopper-medium-replay-v2 log_root_dir=log_model_new trm_epoch_steps=5000 dynamics_max_epochs_since_update=300 dynamics_max_epochs=50 seed=183 train_model_only=true exp_name=trajworld_ft trm_lr=1e-5 load_pt_dynamics_path="mergeall_pt/model/trm_dynamics990000.pkl" n_blocks=6
+python scripts/training/train_trajworld.py env_name=hopper-medium-replay-v2 log_root_dir=log_model_new trm_epoch_steps=5000 dynamics_max_epochs_since_update=300 dynamics_max_epochs=50 seed=183 train_model_only=true exp_name=trajworld_ft trm_lr=1e-5 load_pt_dynamics_path="pt_model/trajworld_pt/trajworld_pt.pkl" n_blocks=6
 ```
 
 To train from scratch, simply remove the load_pt_dynamics_path argument.
