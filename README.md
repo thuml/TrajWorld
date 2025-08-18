@@ -10,6 +10,7 @@ Give it a star 🌟 if you find our work useful!
 
 ## 🔥 News
 
+- 🚩 **2025.08.18**: The UniTraj Dataset is now available on [Huggingface](https://huggingface.co/datasets/Joseph-Yin-2004/UniTraj).
 - 🚩 **2025.06.05**: Training code is released.
 - 🚩 **2025.05.01**: TrajWorld has been accepted by ICML 2025, congrats!.
 - 🚩 **2025.02.03**: Our paper is released on [arXiv](https://arxiv.org/abs/2502.01366).
@@ -76,7 +77,7 @@ Baseline examples are included in the script.
 
 ## 🚀 Release Progress
 
-- [ ] UniTraj Dataset
+- [x] UniTraj Dataset
 - [x] Pre-trained TrajWorld Model
 - [x] Transition prediction evaluation
 - [x] OPE evaluation
