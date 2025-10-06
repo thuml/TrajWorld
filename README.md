@@ -1,4 +1,4 @@
-# Trajectory World Models for Heterogeneous Environments
+# Trajectory World Models for Heterogeneous Environments (ICML 2025)
 
 [![Paper](https://img.shields.io/badge/arXiv-Paper-b31b1b.svg?logo=arxiv)](https://arxiv.org/abs/2502.01366)
 
